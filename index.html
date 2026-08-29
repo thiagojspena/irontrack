@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090b">
+<title>IronTrack — Full Body 75 min</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="IronTrack">
+<meta name="application-name" content="IronTrack">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{-webkit-tap-highlight-color:transparent}body{background:#09090b;color:#f4f4f5;font-family:Inter,system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}.set-row{transition:.15s}.set-row.completed{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3)}
+.exercise-card.completed{border-color:rgba(34,197,94,.45)}.set-check{width:25px;height:25px;accent-color:#22c55e}
+.modal-backdrop{backdrop-filter:blur(7px)}.safe-bottom{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+</style>
+</head>
+<body class="min-h-screen">
+<header class="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur">
+<div class="mx-auto max-w-3xl px-4 py-3">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-2"><div class="flex h-9 w-9 items-center justify-center rounded-xl bg-green-500 font-black text-black">IR</div><div><h1 class="font-black text-white">IronTrack</h1><p class="text-[10px] uppercase tracking-widest text-zinc-500">Full Body • 3x Semana • 75 min</p></div></div>
+<button id="resetBtn" class="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-bold text-zinc-400">Resetar</button>
+</div>
+<div class="mt-3 flex gap-2 overflow-x-auto">
+<button data-w="A" class="tab rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-2 text-sm font-bold text-green-400">Segunda • A</button>
+<button data-w="B" class="tab rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-bold text-zinc-400">Quarta • B</button>
+<button data-w="C" class="tab rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-bold text-zinc-400">Sexta • C</button>
+</div>
+<div class="mt-2 grid grid-cols-2 gap-2">
+<div>
+<label for="weekSelect" class="mb-1 block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Semana</label>
+<select id="weekSelect" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-xs font-bold text-zinc-300 outline-none focus:border-green-500">
+<option value="1">Semana 1 de 8</option>
+<option value="2">Semana 2 de 8</option>
+<option value="3">Semana 3 de 8</option>
+<option value="4">Semana 4 de 8</option>
+<option value="5">Semana 5 de 8</option>
+<option value="6">Semana 6 de 8</option>
+<option value="7">Semana 7 de 8</option>
+<option value="8">Semana 8 de 8</option>
+</select>
+</div>
+<div>
+<label for="programSelect" class="mb-1 block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Programa</label>
+<select id="programSelect" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-xs font-bold text-zinc-300 outline-none focus:border-green-500">
+<option value="hipertrofia">🔥 Hipertrofia geral</option>
+<option value="peito-triceps">💪 Peito + Tríceps</option>
+<option value="costas-postura">🦅 Costas + Postura</option>
+<option value="pernas">🦵 Pernas + Base</option>
+<option value="forca">⚡ Força</option>
+<option value="bracos">💪 Braços</option>
+<option value="ombros-estabilidade">🎯 Ombros + Estabilidade</option>
+</select>
+</div>
+</div>
+<p id="programFocus" class="mt-2 text-[10px] leading-relaxed text-zinc-500"></p>
+</div>
+</div></div></header>
+
+<div id="installHint" class="mt-3 hidden rounded-xl border border-green-500/15 bg-green-500/5 p-3 text-xs text-zinc-400">
+  <strong class="text-green-400">📱 Modo aplicativo:</strong> no Android/Chrome, abra o menu ⋮ e escolha <strong class="text-white">Adicionar à tela inicial</strong> ou <strong class="text-white">Instalar aplicativo</strong>. Depois, o IronTrack abrirá sem a barra normal do navegador quando a instalação como app estiver disponível.
+</div>
+<main class="mx-auto max-w-3xl px-4 pb-44">
+<section class="pt-5">
+<div class="flex items-end justify-between"><div><p id="day" class="text-xs font-bold uppercase tracking-widest text-green-500"></p><h2 id="title" class="mt-1 text-2xl font-black"></h2><p id="subtitle" class="mt-1 text-sm text-zinc-500"></p></div><div class="text-right"><p class="text-xs text-zinc-500">Progresso</p><p id="progress" class="text-xl font-black">0%</p></div></div>
+<div class="mt-4 h-2 rounded-full bg-zinc-800"><div id="bar" class="h-full rounded-full bg-green-500 transition-all" style="width:0"></div></div>
+</section>
+<section class="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4">
+<div class="flex items-start justify-between gap-3">
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-green-500">Programa ativo</p>
+<h3 class="mt-1 font-black text-white">Ciclo de 8 semanas</h3>
+<p id="programMeta" class="mt-1 text-xs leading-relaxed text-zinc-500"></p>
+</div>
+<button id="finishSession" type="button" class="shrink-0 rounded-xl bg-green-500 px-3 py-2 text-xs font-black text-black">Finalizar & salvar</button>
+</div>
+<div class="mt-4">
+<p id="programInsights" class="text-xs leading-relaxed text-zinc-500"></p>
+</div>
+</section>
+
+<section id="list" class="mt-5 space-y-4"></section>
+
+
+
+<section class="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+<h3 class="font-bold">Relatório & análise</h3>
+<p class="mt-1 text-xs text-zinc-500">Os arquivos incluem métricas, evolução de carga, volume, adesão e insights automáticos. O CSV reúne A, B e C; o PDF detalha o plano completo.</p>
+<div class="mt-3 grid grid-cols-2 gap-2">
+<button id="csv" class="rounded-xl border border-zinc-700 bg-zinc-950 py-3 text-sm font-black">Exportar CSV</button>
+<button id="pdf" class="rounded-xl bg-green-500 py-3 text-sm font-black text-black">Exportar PDF</button>
+</div>
+<div id="analytics" class="mt-4 grid grid-cols-2 gap-2"></div>
+<div id="insights" class="mt-3 space-y-2"></div>
+<div class="mt-4">
+<h4 class="text-xs font-black uppercase tracking-widest text-zinc-500">Evolução de desempenho</h4>
+<div id="performanceChart" class="mt-2 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-3"></div>
+</div>
+<div class="mt-4 grid gap-4 md:grid-cols-2">
+<div>
+<h4 class="text-xs font-black uppercase tracking-widest text-zinc-500">🏆 PRs do programa</h4>
+<div id="prs" class="mt-2 space-y-2"></div>
+</div>
+<div>
+<h4 class="text-xs font-black uppercase tracking-widest text-zinc-500">🟡 Possíveis estagnações</h4>
+<div id="plateau" class="mt-2 space-y-2"></div>
+</div>
+</div>
+<div class="mt-4 grid grid-cols-2 gap-2">
+<button id="pdfPlan" class="rounded-xl border border-zinc-700 bg-zinc-950 py-3 text-xs font-black text-white">PDF do Plano</button>
+<button id="pdfProgress" class="rounded-xl bg-green-500 py-3 text-xs font-black text-black">PDF de Evolução</button>
+</div>
+</section>
+
+<section class="mt-5 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+<h3 class="font-bold text-yellow-400">⚠️ Atenção ao ombro</h3>
+<p class="mt-1 text-xs leading-relaxed text-zinc-400">Não force movimentos dolorosos. Reduza carga ou amplitude se necessário.</p>
+</section>
+</main>
+
+<div class="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur">
+<div class="mx-auto max-w-3xl px-4 safe-bottom">
+<div class="flex items-center gap-3 py-3">
+<button id="timerToggle" class="h-12 w-12 rounded-2xl bg-green-500 text-xl font-black text-black">▶</button>
+<div class="flex-1"><div class="flex justify-between"><span id="timerStatus" class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Descanso</span><button id="timerReset" class="text-xs text-zinc-500">Zerar</button></div><span id="timerDisplay" class="font-mono text-2xl font-black">01:30</span></div>
+</div>
+<div class="grid grid-cols-4 gap-2 pb-3">
+<button data-t="45" class="timer rounded-xl border border-zinc-800 bg-zinc-900 py-2 text-xs font-bold">45s</button>
+<button data-t="60" class="timer rounded-xl border border-zinc-800 bg-zinc-900 py-2 text-xs font-bold">60s</button>
+<button data-t="90" class="timer rounded-xl border border-green-500/40 bg-green-500/10 py-2 text-xs font-bold text-green-400">90s</button>
+<button data-t="120" class="timer rounded-xl border border-zinc-800 bg-zinc-900 py-2 text-xs font-bold">120s</button>
+</div>
+</div></div>
+
+<div id="modal" class="modal-backdrop fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 px-5">
+<div class="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-5"><h3 class="text-lg font-black">Resetar treino?</h3><p class="mt-2 text-sm text-zinc-500">As séries e cargas deste treino serão apagadas.</p><div class="mt-5 grid grid-cols-2 gap-3"><button id="cancel" class="rounded-xl border border-zinc-800 py-3 font-bold">Cancelar</button><button id="confirm" class="rounded-xl bg-red-500 py-3 font-bold">Resetar</button></div></div></div>
+
+<script>
+const workouts={
+A:{day:"Segunda-feira",title:"Treino A",subtitle:"Quadríceps + costas + peito",exercises:[
+["a1","Leg Press 45°","Empurre a plataforma com os pés, descendo com controle e sem travar os joelhos.",3,"6–10",150,"Mantenha lombar e pelve apoiadas. Joelhos acompanham os pés."],
+["a2","Remada articulada com apoio no peito","Com o peito apoiado, puxe as alças ao tronco e retorne lentamente.",3,"8–12",120,"Não eleve os ombros; conduza o movimento pelos cotovelos."],
+["a3","Chest Press convergente","Empurre as alças para frente e retorne controlando o peso.",3,"8–12",120,"Use amplitude confortável e não force o ombro."],
+["a4","Mesa flexora","Flexione os joelhos levando o rolo aos posteriores e retorne devagar.",3,"10–15",90,"Mantenha o quadril apoiado e evite impulso."],
+["a5","Puxada alta — pegada neutra","Puxe as alças em direção ao peito conduzindo os cotovelos para baixo.",3,"8–12",120,"Não faça puxada atrás da nuca."],
+["a6","Crucifixo inverso na máquina","Abra os braços para trás contra a resistência e retorne lentamente.",3,"12–15",75,"Carga moderada; não transforme o movimento em remada."],
+["a7","Elevação lateral na máquina","Eleve os braços lateralmente até uma amplitude confortável e retorne.",2,"12–15",60,"Não é necessário usar carga alta."],
+["a8","Extensão de tríceps na polia","Empurre a barra ou corda para baixo estendendo os cotovelos.",2,"10–15",60,"Cotovelos estáveis e próximos ao corpo."],
+["a9","Pallof Press","Empurre o cabo para frente mantendo o tronco imóvel.",2,"10–15/lado",60,"Resista à rotação do tronco."]
+]},
+B:{day:"Quarta-feira",title:"Treino B",subtitle:"Posterior + puxada vertical + peito",exercises:[
+["b1","Hack Squat / Agachamento em máquina","Desça com costas apoiadas e empurre a plataforma para subir.",3,"8–12",150,"Mantenha joelhos alinhados aos pés."],
+["b2","Puxada alta articulada — pegada neutra","Puxe as alças para baixo levando os cotovelos ao tronco.",3,"8–12",120,"Evite balançar o corpo e puxar atrás da nuca."],
+["b3","Supino inclinado em máquina","Empurre as alças para frente e ligeiramente para cima.",3,"8–12",120,"Use inclinação confortável para o ombro."],
+["b4","Mesa flexora","Deitado na mesa, flexione os joelhos contra o rolo e retorne lentamente.",3,"10–15",90,"Mantenha o quadril firme."],
+["b5","Remada baixa na máquina — pegada neutra","Puxe as alças ao abdômen e retorne controlando.",3,"10–15",90,"Evite usar balanço do tronco."],
+["b6","Crucifixo inverso na máquina","Abra os braços para trás mantendo o tronco apoiado.",2,"12–20",60,"Priorize controle e deltoide posterior."],
+["b7","Elevação lateral na máquina","Eleve os braços lateralmente e retorne devagar.",2,"12–15",60,"Amplitude confortável."],
+["b8","Abdominal na máquina","Flexione o tronco contra a resistência e retorne lentamente.",3,"10–15",60,"Evite puxar a cabeça ou usar impulso."]
+]},
+C:{day:"Sexta-feira",title:"Treino C",subtitle:"Pernas + costas + braços",exercises:[
+["c1","Leg Press unilateral","Empurre a plataforma com uma perna mantendo o joelho alinhado.",3,"8–12/cada",120,"Mantenha a pelve estável."],
+["c2","Mesa flexora","Deitado na mesa, flexione os joelhos contra o rolo e retorne lentamente.",3,"10–15",90,"Mantenha o quadril apoiado."],
+["c3","Remada máquina com apoio","Com o peito apoiado, puxe as alças ao tronco.",3,"8–12",120,"Conduza o movimento pelos cotovelos."],
+["c4","Chest Press convergente","Empurre as alças à frente e retorne controlando.",3,"8–12",120,"Não force a amplitude se houver desconforto."],
+["c5","Puxada unilateral","Puxe uma alça de cima para baixo trabalhando um lado por vez.",3,"10–15",90,"Não gire o tronco."],
+["c6","Crucifixo inverso na máquina","Abra os braços para trás e retorne lentamente.",2,"12–20",60,"Priorize controle."],
+["c7","Extensão de tríceps na polia","Empurre a barra ou corda para baixo até estender os cotovelos.",4,"10–15",60,"Mantenha os cotovelos próximos ao corpo."],
+["c8","Rosca bíceps na máquina/polia","Flexione os cotovelos levando as mãos aos ombros e retorne.",3,"10–15",60,"Não use o corpo para completar as repetições."],
+["c9","Abdominal na máquina","Flexione o tronco contra a resistência e retorne devagar.",2,"10–15",60,"Controle todo o movimento."]
+]}};
+
+
+const E=(id,name,desc,sets,reps,rest,tip)=>[id,name,desc,sets,reps,rest,tip];
+
+const PROGRAM_LIBRARY={
+"hipertrofia":{
+ label:"🔥 Full Body — Hipertrofia geral",
+ focus:"Foco: hipertrofia equilibrada, progressão de carga e alto aproveitamento em 75 minutos.",
+ workouts:{
+  A:{day:"Segunda-feira",title:"Treino A — Base de Hipertrofia",subtitle:"Quadríceps + costas + peito",exercises:[
+   E("hg-a1","Leg Press 45°","Empurre a plataforma com os pés, descendo com controle e sem travar os joelhos.",3,"6–10",150,"Lombar e pelve apoiadas; joelhos acompanham os pés."),
+   E("hg-a1b","Cadeira extensora","Estenda os joelhos contra o rolo e retorne lentamente, mantendo o quadril apoiado.",2,"10–15",75,"Controle a subida e a descida; não use impulso."),
+
+   E("hg-a2","Remada articulada com apoio no peito","Com o peito apoiado, puxe as alças ao tronco e retorne lentamente.",3,"8–12",120,"Ombros baixos; conduza pelos cotovelos."),
+   E("hg-a3","Chest Press convergente","Empurre as alças para frente e retorne controlando o peso.",3,"8–12",120,"Não force amplitude dolorosa."),
+   E("hg-a4","Mesa flexora","Deitado na mesa, flexione os joelhos levando o rolo aos posteriores e retorne lentamente.",3,"10–15",90,"Quadril apoiado; sem impulso."),
+   E("hg-a5","Puxada alta neutra","Puxe as alças ao peito levando os cotovelos para baixo.",3,"8–12",120,"Não puxar atrás da nuca."),
+   E("hg-a6","Crucifixo inverso na máquina","Abra os braços para trás contra a resistência e retorne lentamente.",3,"12–15",75,"Carga moderada e movimento controlado."),
+   E("hg-a7","Elevação lateral na máquina","Eleve os braços lateralmente até uma amplitude confortável.",2,"12–15",60,"Amplitude confortável para o ombro."),
+   E("hg-a8","Extensão de tríceps na polia","Empurre a barra ou corda para baixo estendendo os cotovelos.",2,"10–15",60,"Cotovelos estáveis junto ao corpo."),
+   E("hg-a9","Pallof Press","Empurre o cabo à frente mantendo o tronco imóvel.",2,"10–15/lado",60,"Resista à rotação.")
+  ]},
+  B:{day:"Quarta-feira",title:"Treino B — Base de Hipertrofia",subtitle:"Posterior + puxada vertical + peito",exercises:[
+   E("hg-b1","Hack Squat","Desça com as costas apoiadas e empurre a plataforma para subir.",3,"8–12",150,"Joelhos alinhados aos pés."),
+   E("hg-b2","Puxada alta articulada neutra","Puxe as alças para baixo levando os cotovelos ao tronco.",3,"8–12",120,"Sem balanço e sem puxada atrás da nuca."),
+   E("hg-b3","Supino inclinado em máquina","Empurre as alças para frente e ligeiramente para cima.",3,"8–12",120,"Use inclinação confortável para o ombro."),
+   E("hg-b4","Mesa flexora","Deitado na mesa, flexione os joelhos contra o rolo e retorne lentamente.",3,"10–15",90,"Quadril firme."),
+   E("hg-b5","Remada baixa neutra","Puxe as alças ao abdômen mantendo o peito estável.",3,"10–15",90,"Evite balanço do tronco."),
+   E("hg-b6","Crucifixo inverso na máquina","Abra os braços para trás mantendo o tronco apoiado.",2,"12–20",60,"Priorize deltoide posterior."),
+   E("hg-b7","Elevação lateral na máquina","Eleve os braços lateralmente e retorne lentamente.",2,"12–15",60,"Carga moderada."),
+   E("hg-b8","Abdominal na máquina","Flexione o tronco contra a resistência de forma controlada.",3,"10–15",60,"Sem puxar a cabeça.")
+  ]},
+  C:{day:"Sexta-feira",title:"Treino C — Base de Hipertrofia",subtitle:"Pernas + costas + braços",exercises:[
+   E("hg-c1","Leg Press unilateral","Empurre a plataforma com uma perna mantendo o joelho alinhado.",3,"8–12/cada",120,"Mantenha a pelve estável."),
+   E("hg-c1b","Cadeira extensora","Estenda os joelhos contra o rolo e retorne lentamente.",2,"10–15",75,"Controle o movimento sem chutar a carga."),
+
+   E("hg-c2","Mesa flexora","Deitado na mesa, flexione os joelhos contra o rolo e retorne lentamente.",3,"10–15",90,"Quadril apoiado."),
+   E("hg-c3","Remada máquina com apoio","Com o peito apoiado, puxe as alças em direção ao tronco.",3,"8–12",120,"Conduza pelos cotovelos."),
+   E("hg-c4","Chest Press convergente","Empurre as alças para frente mantendo os ombros confortáveis.",3,"8–12",120,"Não force a amplitude."),
+   E("hg-c5","Puxada unilateral","Puxe uma alça de cima para baixo sem girar o tronco.",3,"10–15",90,"Trabalhe cada lado com controle."),
+   E("hg-c6","Crucifixo inverso na máquina","Abra os braços para trás e retorne lentamente.",2,"12–20",60,"Priorize controle."),
+   E("hg-c7","Extensão de tríceps na polia","Empurre a barra ou corda para baixo até estender os cotovelos.",4,"10–15",60,"Cotovelos próximos ao corpo."),
+   E("hg-c8","Rosca bíceps na máquina/polia","Flexione os cotovelos levando as mãos aos ombros.",3,"10–15",60,"Sem usar o corpo."),
+   E("hg-c9","Abdominal na máquina","Flexione o tronco contra a resistência e retorne lentamente.",2,"10–15",60,"Sem impulso.")
+  ]}
+ }
+},
+
+"peito-triceps":{
+ label:"💪 Full Body — Peito + Tríceps",
+ focus:"Foco: intensificar peito e tríceps quando esses grupos são prioridade estética, sem abandonar pernas e costas.",
+ workouts:{
+  A:{day:"Segunda-feira",title:"Treino A — Peito + Tríceps",subtitle:"Full Body • maior ênfase em empurrar",exercises:[
+   E("pt-a1","Hack Squat","Desça com as costas apoiadas e suba empurrando a plataforma.",3,"8–12",150,"Joelhos acompanham os pés."),
+   E("pt-a2","Remada com apoio no peito","Puxe as alças ao tronco com o peito apoiado.",3,"8–12",120,"Ombros baixos."),
+   E("pt-a3","Chest Press convergente","Empurre as alças à frente e retorne lentamente.",4,"6–10",150,"Amplitude confortável para o ombro."),
+   E("pt-a4","Supino inclinado em máquina","Empurre as alças para frente e ligeiramente para cima.",3,"8–12",120,"Reduza a inclinação se incomodar."),
+   E("pt-a5","Mesa flexora","Flexione os joelhos contra o rolo.",3,"10–15",90,"Quadril apoiado."),
+   E("pt-a6","Puxada alta neutra","Puxe ao peito levando os cotovelos para baixo.",3,"8–12",120,"Não puxar atrás da nuca."),
+   E("pt-a7","Tríceps máquina/polia","Estenda os cotovelos empurrando a resistência para baixo.",4,"10–15",60,"Cotovelos estáveis."),
+   E("pt-a8","Crucifixo inverso","Abra os braços para trás com controle.",2,"12–20",60,"Carga moderada."),
+   E("pt-a9","Pallof Press","Empurre o cabo à frente resistindo à rotação.",2,"10–15/lado",60,"Tronco imóvel.")
+  ]},
+  B:{day:"Quarta-feira",title:"Treino B — Peito + Tríceps",subtitle:"Full Body • ângulo inclinado + pernas",exercises:[
+   E("pt-b1","Leg Press 45°","Empurre a plataforma com as pernas.",3,"8–12",150,"Lombar apoiada."),
+   E("pt-b2","Puxada articulada neutra","Puxe as alças em direção ao tronco.",3,"8–12",120,"Controle a volta."),
+   E("pt-b3","Supino inclinado em máquina","Empurre as alças para frente e ligeiramente para cima.",4,"8–12",120,"Amplitude sem dor."),
+   E("pt-b4","Chest Press horizontal","Empurre as alças horizontalmente à frente.",3,"10–12",120,"Mantenha os ombros confortáveis."),
+   E("pt-b5","Mesa flexora","Flexione os joelhos contra o rolo.",3,"10–15",90,"Quadril firme."),
+   E("pt-b6","Remada baixa neutra","Puxe as alças ao abdômen.",3,"10–15",90,"Sem balanço."),
+   E("pt-b7","Tríceps na polia com corda","Empurre a corda para baixo separando levemente as mãos no final.",4,"10–15",60,"Não use impulso."),
+   E("pt-b8","Elevação lateral na máquina","Eleve os braços lateralmente.",2,"12–15",60,"Carga moderada."),
+   E("pt-b9","Abdominal máquina","Flexione o tronco contra a resistência.",2,"10–15",60,"Controle.")
+  ]},
+  C:{day:"Sexta-feira",title:"Treino C — Peito + Tríceps",subtitle:"Full Body • convergente + braços",exercises:[
+   E("pt-c1","Leg Press unilateral","Empurre a plataforma com uma perna.",3,"8–12/cada",120,"Pelve estável."),
+   E("pt-c2","Mesa flexora","Deitado na mesa, flexione os joelhos levando o rolo aos posteriores.",3,"10–15",90,"Sem tirar o quadril do apoio."),
+   E("pt-c3","Remada máquina convergente","Puxe as alças em direção ao tronco.",3,"8–12",120,"Sem elevar os ombros."),
+   E("pt-c4","Chest Press convergente","Empurre as alças para frente.",4,"8–12",120,"Amplitude confortável."),
+   E("pt-c5","Chest Fly máquina","Aproxime as alças à frente em um arco confortável.",2,"10–15",75,"Não deixe o ombro entrar em posição dolorosa."),
+   E("pt-c6","Puxada unilateral","Puxe uma alça por vez sem girar o tronco.",3,"10–15",90,"Controle cada lado."),
+   E("pt-c7","Tríceps máquina","Empurre as alças para baixo ou à frente conforme a máquina.",4,"10–15",60,"Cotovelos estáveis."),
+   E("pt-c8","Tríceps unilateral na polia","Estenda um cotovelo por vez mantendo o braço estável.",2,"12–15/lado",60,"Evite compensação."),
+   E("pt-c9","Rosca bíceps","Flexione os cotovelos sem movimentar o tronco.",2,"10–15",60,"Sem impulso.")
+  ]}
+ }
+},
+
+"costas-postura":{
+ label:"🦅 Full Body — Costas + Postura",
+ focus:"Foco: largura, espessura e deltoide posterior, com máquinas e apoio para maior controle do tronco.",
+ workouts:{
+  A:{day:"Segunda-feira",title:"Treino A — Costas + Postura",subtitle:"Full Body • espessura das costas",exercises:[
+   E("cp-a1","Leg Press 45°","Empurre a plataforma com os pés.",3,"8–12",150,"Lombar apoiada."),
+   E("cp-a2","Remada articulada com apoio","Puxe as alças ao tronco.",4,"8–12",120,"Ombros baixos."),
+   E("cp-a3","Puxada alta neutra","Puxe as alças ao peito.",4,"8–12",120,"Não puxe atrás da nuca."),
+   E("cp-a4","Chest Press","Empurre as alças à frente.",3,"8–12",120,"Sem dor no ombro."),
+   E("cp-a5","Mesa flexora","Flexione os joelhos contra o rolo.",3,"10–15",90,"Quadril apoiado."),
+   E("cp-a6","Remada baixa neutra","Puxe ao abdômen.",3,"10–15",90,"Sem balanço."),
+   E("cp-a7","Crucifixo inverso","Abra os braços para trás.",3,"12–20",60,"Foco no deltoide posterior."),
+   E("cp-a8","Rosca bíceps","Flexione os cotovelos.",2,"10–15",60,"Sem impulso."),
+   E("cp-a9","Pallof Press","Resista à rotação do cabo.",2,"10–15/lado",60,"Tronco imóvel.")
+  ]},
+  B:{day:"Quarta-feira",title:"Treino B — Costas + Postura",subtitle:"Full Body • largura das costas",exercises:[
+   E("cp-b1","Hack Squat","Desça com costas apoiadas e suba.",3,"8–12",150,"Joelhos alinhados."),
+   E("cp-b2","Puxada articulada pronada confortável","Puxe as alças para o peito.",3,"8–12",120,"Use a pegada mais confortável ao ombro."),
+   E("cp-b3","Remada articulada unilateral","Puxe uma alça de cada vez ao tronco.",3,"8–12/lado",120,"Evite girar o tronco."),
+   E("cp-b4","Chest Press convergente","Empurre as alças à frente.",3,"8–12",120,"Amplitude confortável."),
+   E("cp-b5","Mesa flexora","Flexione os joelhos contra o rolo.",3,"10–15",90,"Controle a volta."),
+   E("cp-b6","Remada máquina com apoio","Puxe as alças com o peito apoiado.",4,"8–12",120,"Sem compensação."),
+   E("cp-b7","Reverse Fly máquina","Abra os braços para trás.",3,"12–20",60,"Carga moderada."),
+   E("cp-b8","Face Pull na polia","Puxe a corda em direção ao rosto mantendo os cotovelos abertos.",2,"12–15",60,"Movimento leve e controlado."),
+   E("cp-b9","Abdominal máquina","Flexione o tronco contra a resistência.",2,"10–15",60,"Sem impulso.")
+  ]},
+  C:{day:"Sexta-feira",title:"Treino C — Costas + Postura",subtitle:"Full Body • puxadas + controle escapular",exercises:[
+   E("cp-c1","Leg Press unilateral","Empurre a plataforma com uma perna.",3,"8–12/cada",120,"Pelve estável."),
+   E("cp-c2","Mesa flexora","Flexione os joelhos contra o rolo.",3,"10–15",90,"Quadril apoiado."),
+   E("cp-c3","Remada máquina com apoio no peito","Puxe as alças ao tronco.",4,"8–12",120,"Peito apoiado."),
+   E("cp-c4","Puxada unilateral alta","Puxe cada alça de cima para baixo.",4,"10–15",90,"Sem girar o tronco."),
+   E("cp-c5","Remada baixa neutra","Puxe ao abdômen.",3,"10–15",90,"Controle."),
+   E("cp-c6","Chest Press","Empurre as alças à frente.",2,"10–12",120,"Confortável ao ombro."),
+   E("cp-c7","Crucifixo inverso","Abra os braços para trás.",3,"12–20",60,"Priorize qualidade."),
+   E("cp-c8","Extensão de tríceps","Estenda os cotovelos na polia.",2,"10–15",60,"Cotovelos estáveis."),
+   E("cp-c9","Rosca bíceps máquina","Flexione os cotovelos.",2,"10–15",60,"Sem compensação.")
+  ]}
+ }
+},
+
+"pernas":{
+ label:"🦵 Full Body — Pernas + Base",
+ focus:"Foco: quadríceps e posteriores, indicado quando pernas são a principal meta sem abandonar o tronco.",
+ workouts:{
+  A:{day:"Segunda-feira",title:"Treino A — Pernas + Base",subtitle:"Full Body • foco em quadríceps",exercises:[
+   E("pg-a1","Hack Squat","Desça com costas apoiadas e suba empurrando a plataforma.",4,"6–10",150,"Joelhos acompanham os pés."),
+   E("pg-a2","Leg Press 45°","Empurre a plataforma com os pés.",3,"10–15",120,"Amplitude controlada."),
+   E("pg-a3","Remada com apoio","Puxe as alças ao tronco.",3,"8–12",120,"Peito apoiado."),
+   E("pg-a4","Chest Press","Empurre as alças à frente.",3,"8–12",120,"Sem dor."),
+   E("pg-a5","Mesa flexora","Flexione os joelhos contra o rolo.",3,"10–15",90,"Quadril apoiado."),
+   E("pg-a6","Extensora","Estenda os joelhos contra o rolo e retorne lentamente.",3,"10–15",75,"Não dê impulso."),
+   E("pg-a7","Puxada neutra","Puxe ao peito.",2,"10–12",90,"Controle."),
+   E("pg-a8","Panturrilha na máquina","Empurre com a ponta dos pés e desça lentamente os calcanhares.",3,"10–15",60,"Amplitude completa confortável."),
+   E("pg-a9","Abdominal máquina","Flexione o tronco controladamente.",2,"10–15",60,"Sem impulso.")
+  ]},
+  B:{day:"Quarta-feira",title:"Treino B — Pernas + Base",subtitle:"Full Body • foco em posteriores",exercises:[
+   E("pg-b1","Leg Press 45°","Empurre a plataforma com os pés.",4,"8–12",150,"Lombar apoiada."),
+   E("pg-b2","Mesa flexora","Flexione os joelhos contra o rolo.",4,"8–12",90,"Quadril firme."),
+   E("pg-b3","Hack Squat","Desça com controle e suba empurrando.",3,"10–12",150,"Joelhos alinhados."),
+   E("pg-b4","Remada baixa","Puxe as alças ao abdômen.",3,"10–15",90,"Sem balanço."),
+   E("pg-b5","Supino inclinado máquina","Empurre as alças para frente e para cima.",3,"8–12",120,"Inclinação confortável."),
+   E("pg-b6","Extensão de quadril máquina","Empurre o apoio para trás estendendo o quadril.",3,"10–15",75,"Não arqueie a lombar."),
+   E("pg-b7","Crucifixo inverso","Abra os braços para trás.",2,"12–20",60,"Controle."),
+   E("pg-b8","Panturrilha sentada","Eleve os calcanhares e desça lentamente.",3,"12–20",60,"Pausa breve no alongamento."),
+   E("pg-b9","Abdominal máquina","Flexione o tronco contra a resistência.",2,"10–15",60,"Controle.")
+  ]},
+  C:{day:"Sexta-feira",title:"Treino C — Pernas + Base",subtitle:"Full Body • unilateral + volume",exercises:[
+   E("pg-c1","Leg Press unilateral","Empurre a plataforma com uma perna.",4,"8–12/cada",120,"Pelve estável."),
+   E("pg-c2","Extensora","Estenda os joelhos contra o rolo.",3,"10–15",75,"Sem impulso."),
+   E("pg-c3","Mesa flexora","Flexione os joelhos contra o rolo.",3,"10–15",90,"Quadril apoiado."),
+   E("pg-c4","Remada articulada com apoio","Puxe as alças ao tronco.",3,"8–12",120,"Ombros baixos."),
+   E("pg-c5","Chest Press convergente","Empurre as alças à frente.",3,"8–12",120,"Amplitude confortável."),
+   E("pg-c6","Puxada alta neutra","Puxe ao peito.",3,"10–15",90,"Controle."),
+   E("pg-c7","Panturrilha no Leg Press","Empurre a plataforma apenas com os pés, realizando flexão plantar controlada.",3,"12–20",60,"Não quique na posição alongada."),
+   E("pg-c8","Tríceps na polia","Estenda os cotovelos.",2,"10–15",60,"Sem balanço."),
+   E("pg-c9","Rosca bíceps","Flexione os cotovelos.",2,"10–15",60,"Sem impulso.")
+  ]}
+ }
+},
+
+"forca":{
+ label:"⚡ Full Body — Força",
+ focus:"Foco: força nos padrões principais, com repetições menores, descansos maiores e progressão conservadora.",
+ workouts:{
+  A:{day:"Segunda-feira",title:"Treino A — Força",subtitle:"Full Body • base pesada",exercises:[
+   E("fo-a1","Leg Press 45°","Empurre a plataforma com controle.",4,"5–8",180,"Técnica antes da carga."),
+   E("fo-a2","Remada com apoio no peito","Puxe as alças ao tronco.",4,"6–10",150,"Peito apoiado."),
+   E("fo-a3","Chest Press convergente","Empurre as alças à frente.",4,"6–10",150,"Sem dor no ombro."),
+   E("fo-a4","Mesa flexora","Flexione os joelhos.",3,"8–12",90,"Sem impulso."),
+   E("fo-a5","Puxada neutra","Puxe ao peito.",3,"6–10",150,"Controle."),
+   E("fo-a6","Crucifixo inverso","Abra os braços para trás.",2,"12–15",75,"Carga moderada."),
+   E("fo-a7","Tríceps polia","Estenda os cotovelos.",2,"10–15",60,"Controle.")
+  ]},
+  B:{day:"Quarta-feira",title:"Treino B — Força",subtitle:"Full Body • pernas + costas",exercises:[
+   E("fo-b1","Hack Squat","Desça e suba com costas apoiadas.",4,"5–8",180,"Joelhos alinhados."),
+   E("fo-b2","Puxada articulada neutra","Puxe as alças para o tronco.",4,"6–10",150,"Sem balanço."),
+   E("fo-b3","Supino máquina confortável","Empurre as alças à frente.",4,"6–10",150,"Amplitude sem dor."),
+   E("fo-b4","Mesa flexora","Flexione os joelhos.",3,"8–12",90,"Quadril firme."),
+   E("fo-b5","Remada baixa neutra","Puxe ao abdômen.",4,"6–10",150,"Tórax estável."),
+   E("fo-b6","Elevação lateral máquina","Eleve os braços lateralmente.",2,"12–15",60,"Carga moderada."),
+   E("fo-b7","Abdominal máquina","Flexione o tronco.",2,"10–15",60,"Controle.")
+  ]},
+  C:{day:"Sexta-feira",title:"Treino C — Força",subtitle:"Full Body • progressão de carga",exercises:[
+   E("fo-c1","Leg Press unilateral","Empurre a plataforma com uma perna.",3,"6–10/cada",150,"Pelve estável."),
+   E("fo-c2","Mesa flexora","Flexione os joelhos.",3,"8–12",90,"Controle."),
+   E("fo-c3","Remada máquina com apoio","Puxe ao tronco.",4,"6–10",150,"Sem compensar."),
+   E("fo-c4","Chest Press convergente","Empurre as alças.",4,"6–10",150,"Sem dor."),
+   E("fo-c5","Puxada unilateral","Puxe de cima para baixo.",3,"8–12",120,"Sem girar."),
+   E("fo-c6","Crucifixo inverso","Abra os braços atrás.",2,"12–15",75,"Controle."),
+   E("fo-c7","Tríceps polia","Estenda os cotovelos.",3,"10–15",60,"Sem impulso."),
+   E("fo-c8","Rosca bíceps","Flexione os cotovelos.",2,"10–15",60,"Sem balanço.")
+  ]}
+ }
+},
+
+"bracos":{
+ label:"💪 Full Body — Braços",
+ focus:"Foco: maior volume direto para bíceps e tríceps, adequado quando braços são ponto fraco estético.",
+ workouts:{
+  A:{day:"Segunda-feira",title:"Treino A — Braços",subtitle:"Full Body • tríceps em destaque",exercises:[
+   E("br-a1","Leg Press","Empurre a plataforma com as pernas.",3,"8–12",150,"Lombar apoiada."),
+   E("br-a2","Remada com apoio","Puxe as alças ao tronco.",3,"8–12",120,"Ombros baixos."),
+   E("br-a3","Chest Press","Empurre as alças à frente.",3,"8–12",120,"Amplitude confortável."),
+   E("br-a4","Mesa flexora","Flexione os joelhos.",3,"10–15",90,"Controle."),
+   E("br-a5","Puxada neutra","Puxe ao peito.",3,"8–12",120,"Sem puxada atrás da nuca."),
+   E("br-a6","Tríceps polia","Estenda os cotovelos para baixo.",4,"10–15",60,"Cotovelos estáveis."),
+   E("br-a7","Rosca máquina","Flexione os cotovelos contra a resistência.",3,"10–15",60,"Sem usar o tronco."),
+   E("br-a8","Crucifixo inverso","Abra os braços para trás.",2,"12–20",60,"Controle."),
+   E("br-a9","Pallof Press","Resista à rotação.",2,"10–15/lado",60,"Tronco imóvel.")
+  ]},
+  B:{day:"Quarta-feira",title:"Treino B — Braços",subtitle:"Full Body • bíceps em destaque",exercises:[
+   E("br-b1","Hack Squat","Desça e suba com apoio.",3,"8–12",150,"Controle."),
+   E("br-b2","Puxada articulada neutra","Puxe ao tronco.",3,"8–12",120,"Sem balanço."),
+   E("br-b3","Supino inclinado máquina","Empurre as alças.",3,"8–12",120,"Sem dor."),
+   E("br-b4","Mesa flexora","Flexione os joelhos.",3,"10–15",90,"Quadril firme."),
+   E("br-b5","Remada baixa","Puxe ao abdômen.",3,"10–15",90,"Sem balanço."),
+   E("br-b6","Rosca máquina","Flexione os cotovelos.",4,"10–15",60,"Controle."),
+   E("br-b7","Rosca unilateral na polia","Flexione um cotovelo por vez.",2,"12–15/lado",60,"Sem girar o tronco."),
+   E("br-b8","Tríceps polia","Estenda os cotovelos.",3,"10–15",60,"Cotovelos estáveis."),
+   E("br-b9","Abdominal máquina","Flexione o tronco.",2,"10–15",60,"Controle.")
+  ]},
+  C:{day:"Sexta-feira",title:"Treino C — Braços",subtitle:"Full Body • volume de braços",exercises:[
+   E("br-c1","Leg Press unilateral","Empurre a plataforma com uma perna.",3,"8–12/cada",120,"Pelve estável."),
+   E("br-c2","Mesa flexora","Flexione os joelhos.",3,"10–15",90,"Controle."),
+   E("br-c3","Remada articulada","Puxe as alças ao tronco.",3,"8–12",120,"Ombros baixos."),
+   E("br-c4","Chest Press convergente","Empurre as alças.",3,"8–12",120,"Amplitude confortável."),
+   E("br-c5","Puxada unilateral","Puxe uma alça por vez.",3,"10–15",90,"Sem girar."),
+   E("br-c6","Tríceps máquina","Estenda os cotovelos.",4,"10–15",60,"Controle."),
+   E("br-c7","Tríceps unilateral","Estenda um cotovelo por vez.",2,"12–15/lado",60,"Sem compensação."),
+   E("br-c8","Rosca bíceps máquina","Flexione os cotovelos.",4,"10–15",60,"Sem impulso."),
+   E("br-c9","Crucifixo inverso","Abra os braços para trás.",2,"12–20",60,"Controle.")
+  ]}
+ }
+},
+
+"ombros-estabilidade":{
+ label:"🎯 Full Body — Ombros + Estabilidade",
+ focus:"Foco: deltoide posterior, lateral e controle escapular; não deve ser usado para treinar através da dor.",
+ workouts:{
+  A:{day:"Segunda-feira",title:"Treino A — Ombros + Estabilidade",subtitle:"Full Body • deltoide posterior",exercises:[
+   E("oe-a1","Leg Press","Empurre a plataforma com as pernas.",3,"8–12",150,"Controle."),
+   E("oe-a2","Remada com apoio","Puxe as alças ao tronco.",3,"8–12",120,"Peito apoiado."),
+   E("oe-a3","Chest Press confortável","Empurre as alças à frente.",3,"8–12",120,"Use apenas amplitude confortável."),
+   E("oe-a4","Mesa flexora","Flexione os joelhos.",3,"10–15",90,"Quadril apoiado."),
+   E("oe-a5","Puxada neutra","Puxe ao peito.",3,"8–12",120,"Sem puxar atrás da nuca."),
+   E("oe-a6","Crucifixo inverso","Abra os braços para trás.",4,"12–20",60,"Foco no deltoide posterior."),
+   E("oe-a7","Elevação lateral máquina","Eleve os braços lateralmente.",3,"12–15",60,"Carga moderada."),
+   E("oe-a8","Face Pull","Puxe a corda em direção ao rosto com controle.",2,"12–15",60,"Sem dor ou compensação."),
+   E("oe-a9","Pallof Press","Resista à rotação do cabo.",2,"10–15/lado",60,"Tronco imóvel.")
+  ]},
+  B:{day:"Quarta-feira",title:"Treino B — Ombros + Estabilidade",subtitle:"Full Body • deltoide lateral",exercises:[
+   E("oe-b1","Hack Squat","Desça com costas apoiadas e suba.",3,"8–12",150,"Joelhos alinhados."),
+   E("oe-b2","Puxada articulada","Puxe as alças para o tronco.",3,"8–12",120,"Controle."),
+   E("oe-b3","Supino inclinado máquina","Empurre as alças para frente e para cima.",3,"8–12",120,"Inclinação confortável."),
+   E("oe-b4","Mesa flexora","Flexione os joelhos.",3,"10–15",90,"Quadril firme."),
+   E("oe-b5","Remada baixa","Puxe as alças ao abdômen.",3,"10–15",90,"Sem balanço."),
+   E("oe-b6","Elevação lateral máquina","Eleve os braços lateralmente.",4,"12–15",60,"Carga moderada."),
+   E("oe-b7","Crucifixo inverso","Abra os braços atrás.",3,"12–20",60,"Controle."),
+   E("oe-b8","Face Pull","Puxe a corda em direção ao rosto.",2,"12–15",60,"Movimento leve."),
+   E("oe-b9","Abdominal máquina","Flexione o tronco.",2,"10–15",60,"Controle.")
+  ]},
+  C:{day:"Sexta-feira",title:"Treino C — Ombros + Estabilidade",subtitle:"Full Body • posterior + controle",exercises:[
+   E("oe-c1","Leg Press unilateral","Empurre a plataforma com uma perna.",3,"8–12/cada",120,"Pelve estável."),
+   E("oe-c2","Mesa flexora","Flexione os joelhos.",3,"10–15",90,"Controle."),
+   E("oe-c3","Remada máquina com apoio","Puxe as alças ao tronco.",3,"8–12",120,"Peito apoiado."),
+   E("oe-c4","Chest Press","Empurre as alças à frente.",3,"8–12",120,"Amplitude confortável."),
+   E("oe-c5","Puxada unilateral","Puxe uma alça por vez.",3,"10–15",90,"Sem girar."),
+   E("oe-c6","Crucifixo inverso","Abra os braços atrás.",4,"12–20",60,"Priorize deltoide posterior."),
+   E("oe-c7","Elevação lateral máquina","Eleve os braços lateralmente.",3,"12–15",60,"Sem dor."),
+   E("oe-c8","Tríceps polia","Estenda os cotovelos.",2,"10–15",60,"Cotovelos estáveis."),
+   E("oe-c9","Rosca máquina","Flexione os cotovelos.",2,"10–15",60,"Sem impulso.")
+  ]}
+ }
+}
+};
+
+
+const KEY="irontrack_v10";
+const defaultState={
+  workout:"A",program:"hipertrofia",week:1,weights:{},reps:{},checks:{},
+  sessions:[],timer:90,remaining:90,running:false
+};
+let state={...defaultState};
+try{state={...defaultState,...JSON.parse(localStorage.getItem(KEY)||"{}")}}catch(e){}
+if(!PROGRAM_LIBRARY[state.program])state.program="hipertrofia";
+state.week=Math.min(8,Math.max(1,Number(state.week)||1));
+state.weights=state.weights||{};state.reps=state.reps||{};state.checks=state.checks||{};state.sessions=Array.isArray(state.sessions)?state.sessions:[];
+
+const $=id=>document.getElementById(id);
+const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+const activeWorkouts=()=>PROGRAM_LIBRARY[state.program].workouts;
+const currentWorkout=()=>activeWorkouts()[state.workout];
+const sessionKey=()=>`${state.program}|W${state.week}|${state.workout}`;
+const key=(id,i)=>`${state.program}|W${state.week}|${id}|S${i}`;
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+
+function render(){
+  const w=currentWorkout();
+  $("day").textContent=w.day;
+  $("title").textContent=w.title;
+  $("subtitle").textContent=`${w.subtitle} • Semana ${state.week}/8`;
+  $("weekSelect").value=String(state.week);
+  $("programSelect").value=state.program;
+  $("programFocus").textContent=PROGRAM_LIBRARY[state.program].focus;
+  $("list").innerHTML=w.exercises.map((e,n)=>{
+    let done=0;
+    for(let i=0;i<e[3];i++)if(state.checks[key(e[0],i)])done++;
+    const complete=done===e[3];
+    return `<article class="exercise-card rounded-2xl border ${complete?"completed border-green-500/40":"border-zinc-800"} bg-zinc-900/70 p-4">
+      <div class="flex gap-3">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-800">${["🦵","🏋️","💪","🦵","🔻","🪽","🪽","💪","🎯"][n]||"💪"}</div>
+        <div class="min-w-0 flex-1">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-green-500">Exercício ${n+1}</p>
+          <h3 class="font-black text-white">${e[1]}</h3>
+          <p class="mt-1 text-xs text-zinc-500">${e[2]}</p>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-2 gap-2">
+        <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><p class="text-[9px] uppercase tracking-widest text-zinc-600">Séries</p><b>${e[3]}</b></div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><p class="text-[9px] uppercase tracking-widest text-zinc-600">Faixa</p><b>${e[4]}</b></div>
+      </div>
+      <button type="button" data-rest="${e[5]}" class="mt-3 flex w-full justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs"><span>⏱ Descanso</span><b class="text-green-400">${e[5]}s</b></button>
+      <div class="mt-4 flex items-center justify-between gap-2">
+        <div class="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Séries • reps e carga</div>
+        <div class="flex gap-2">
+          <button type="button" data-copy-reps="${e[0]}" class="rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-[10px] font-black text-zinc-300">↳ Repetir reps</button>
+          <button type="button" data-copy-weight="${e[0]}" class="rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-[10px] font-black text-zinc-300">↳ Repetir peso</button>
+        </div>
+      </div>
+      <div class="mt-2 space-y-2">
+      ${Array.from({length:e[3]},(_,i)=>{
+        const k=key(e[0],i),c=!!state.checks[k];
+        return `<div class="set-row flex flex-wrap items-center gap-2 rounded-xl border ${c?"completed":"border-zinc-800 bg-zinc-950/70"} p-3">
+          <input type="checkbox" class="set-check" data-check="${k}" ${c?"checked":""}>
+          <span class="text-xs font-bold ${c?"text-green-400":""}">Série ${i+1}</span>
+          <div class="ml-auto flex items-center gap-2">
+            <label class="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1.5">
+              <input type="number" inputmode="numeric" min="0" max="100" data-reps="${k}" value="${state.reps[k]??""}" placeholder="reps" class="w-14 bg-transparent text-right text-sm font-black outline-none">
+              <span class="text-[10px] text-zinc-600">rep</span>
+            </label>
+            <label class="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1.5">
+              <input type="number" inputmode="decimal" step="0.5" min="0" data-weight="${k}" value="${state.weights[k]??""}" placeholder="0" class="w-16 bg-transparent text-right text-sm font-black outline-none">
+              <span class="text-[10px] text-zinc-600">kg</span>
+            </label>
+          </div>
+        </div>`;
+      }).join("")}</div>
+      <details class="mt-4"><summary class="cursor-pointer rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs font-bold text-yellow-400">💡 Dica de Ouro</summary><div class="border-x border-b border-zinc-800 p-3 text-xs text-zinc-400">${e[6]}</div></details>
+    </article>`;
+  }).join("");
+  bind();
+  updateProgress();
+  updateSessionStatus();
+  renderAnalytics();
+}
+
+function bind(){
+  document.querySelectorAll("[data-weight]").forEach(x=>x.oninput=e=>{state.weights[e.target.dataset.weight]=e.target.value;save();renderAnalytics()});
+  document.querySelectorAll("[data-reps]").forEach(x=>x.oninput=e=>{state.reps[e.target.dataset.reps]=e.target.value;save();renderAnalytics()});
+  document.querySelectorAll("[data-check]").forEach(x=>x.onchange=e=>{state.checks[e.target.dataset.check]=e.target.checked;save();render();if(e.target.checked){const exId=e.target.dataset.check.split("|").slice(-2)[0];const ex=currentWorkout().exercises.find(z=>z[0]===exId);if(ex)setTimer(ex[5],true)}});
+  document.querySelectorAll("[data-copy-weight]").forEach(btn=>btn.onclick=()=>{
+    const ex=currentWorkout().exercises.find(e=>e[0]===btn.dataset.copyWeight);if(!ex)return;
+    let source="";for(let i=0;i<ex[3];i++){let v=state.weights[key(ex[0],i)];if(v!==undefined&&String(v).trim()!==""){source=v;break}}
+    if(source===""){alert("Digite primeiro o peso em uma série.");return}
+    for(let i=0;i<ex[3];i++)state.weights[key(ex[0],i)]=source;save();render();
+  });
+  document.querySelectorAll("[data-copy-reps]").forEach(btn=>btn.onclick=()=>{
+    const ex=currentWorkout().exercises.find(e=>e[0]===btn.dataset.copyReps);if(!ex)return;
+    let source="";for(let i=0;i<ex[3];i++){let v=state.reps[key(ex[0],i)];if(v!==undefined&&String(v).trim()!==""){source=v;break}}
+    if(source===""){alert("Digite primeiro as repetições em uma série.");return}
+    for(let i=0;i<ex[3];i++)state.reps[key(ex[0],i)]=source;save();render();
+  });
+  document.querySelectorAll("[data-rest]").forEach(b=>b.onclick=()=>setTimer(+b.dataset.rest));
+}
+
+function updateProgress(){
+  const w=currentWorkout();let total=0,done=0;
+  w.exercises.forEach(e=>{for(let i=0;i<e[3];i++){total++;if(state.checks[key(e[0],i)])done++}});
+  const p=total?Math.round(done/total*100):0;$("progress").textContent=p+"%";$("bar").style.width=p+"%";
+}
+function sessionSnapshot(){
+  const w=currentWorkout();
+  return w.exercises.map(e=>({id:e[0],name:e[1],sets:Array.from({length:e[3]},(_,i)=>{const k=key(e[0],i);return{set:i+1,weight:Number(state.weights[k])||0,reps:Number(state.reps[k])||0,done:!!state.checks[k]}})}));
+}
+function saveSession(){
+  const snap=sessionSnapshot(), rec={program:state.program,week:state.week,workout:state.workout,date:new Date().toISOString(),exercises:snap};
+  const idx=state.sessions.findIndex(s=>s.program===rec.program&&s.week===rec.week&&s.workout===rec.workout);
+  if(idx>=0)state.sessions[idx]=rec;else state.sessions.push(rec);
+  save();updateSessionStatus();renderAnalytics();
+}
+function updateSessionStatus(){
+  const s=state.sessions.find(x=>x.program===state.program&&x.week===state.week&&x.workout===state.workout);
+  const meta=$("programMeta");
+  if(meta) meta.textContent=s
+    ? `Semana ${state.week}/8 • ${s.date ? "Sessão salva em "+new Date(s.date).toLocaleString("pt-BR") : "sessão salva"}`
+    : `Semana ${state.week}/8 • Sessão ainda não finalizada`;
+  const insight=$("programInsights");
+  if(insight) insight.textContent=`${PROGRAM_LIBRARY[state.program].focus} • Treino ${state.workout}`;
+}
+
+function programStats(){
+  const sessions=state.sessions.filter(s=>s.program===state.program).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const allSets=sessions.flatMap(s=>s.exercises.flatMap(e=>e.sets.map(x=>({...x,exercise:e.name,date:s.date,week:s.week,workout:s.workout}))));
+  const done=allSets.filter(x=>x.done&&x.weight>0&&x.reps>0);
+  const volume=done.reduce((a,x)=>a+x.weight*x.reps,0);
+  const workoutCount=new Set(sessions.map(s=>`${s.week}|${s.workout}`)).size;
+  const prs={};
+  done.forEach(x=>{if(!prs[x.exercise])prs[x.exercise]={maxLoad:0,bestSet:0};prs[x.exercise].maxLoad=Math.max(prs[x.exercise].maxLoad,x.weight);prs[x.exercise].bestSet=Math.max(prs[x.exercise].bestSet,x.weight*x.reps)});
+  const plateau=[];
+  Object.keys(prs).forEach(name=>{
+    const series=done.filter(x=>x.exercise===name).slice(-3);
+    if(series.length>=3){
+      const first=series[0].weight*series[0].reps,last=series[series.length-1].weight*series[series.length-1].reps;
+      if(first>0&&last<=first*1.02)plateau.push({name,first,last});
+    }
+  });
+  return {sessions,allSets,done,volume,workoutCount,prs,plateau};
+}
+function renderAnalytics(){
+  const a=programStats();
+  const planned=state.sessions.length?state.sessions.length*1:0;
+  $("analytics").innerHTML=[
+    ["Sessões",a.workoutCount],
+    ["Séries concluídas",a.done.length],
+    ["Volume",`${a.volume.toFixed(0)} kg`],
+    ["PRs",Object.keys(a.prs).length]
+  ].map(x=>`<div class="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><p class="text-[9px] uppercase tracking-widest text-zinc-600">${x[0]}</p><p class="mt-1 text-lg font-black text-white">${x[1]}</p></div>`).join("");
+  const ins=[];
+  if(!a.sessions.length)ins.push("Finalize sua primeira sessão para começar o histórico e os gráficos.");
+  else{
+    const weeks=new Set(a.sessions.map(s=>s.week)); if(weeks.size>=2)ins.push(`Você já possui ${weeks.size} semanas registradas neste programa.`);
+    if(a.done.length)ins.push(`O volume acumulado registrado é ${a.volume.toFixed(0)} kg.`);
+    if(a.plateau.length)ins.push(`${a.plateau.length} exercício(s) mostram pouca evolução nas últimas exposições; reveja carga, reps, técnica e recuperação.`);
+  }
+  $("insights").innerHTML=ins.map(x=>`<div class="rounded-xl border border-green-500/10 bg-green-500/5 p-3 text-xs text-zinc-400">↗ ${x}</div>`).join("");
+  renderChart(a);renderPRs(a);renderPlateau(a);
+}
+function renderPRs(a){
+  $("prs").innerHTML=Object.entries(a.prs).sort((x,y)=>y[1].maxLoad-x[1].maxLoad).slice(0,8).map(([n,v])=>`<div class="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs"><b class="text-white">${esc(n)}</b><div class="mt-1 text-zinc-500">Maior carga: <strong class="text-green-400">${v.maxLoad} kg</strong> • Melhor série: ${v.bestSet.toFixed(0)} kg·reps</div></div>`).join("")||`<div class="text-xs text-zinc-600">Sem PRs registrados ainda.</div>`;
+}
+function renderPlateau(a){
+  $("plateau").innerHTML=a.plateau.slice(0,6).map(x=>`<div class="rounded-xl border border-yellow-500/10 bg-yellow-500/5 p-3 text-xs"><b class="text-white">${esc(x.name)}</b><div class="mt-1 text-zinc-500">Últimas exposições: ${x.first.toFixed(0)} → ${x.last.toFixed(0)} de carga×reps.</div></div>`).join("")||`<div class="text-xs text-zinc-600">Nenhum sinal de estagnação detectado.</div>`;
+}
+function renderChart(a){
+  const weeks=Array.from({length:8},(_,i)=>({week:i+1,volume:0,sessions:0}));
+  a.sessions.forEach(s=>{weeks[s.week-1].sessions++;s.exercises.forEach(e=>e.sets.forEach(x=>{if(x.done)weeks[s.week-1].volume+=(x.weight||0)*(x.reps||0)}))});
+  const W=640,H=210,pad=34,max=Math.max(1,...weeks.map(x=>x.volume)),bw=(W-pad*2)/8;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" class="w-full min-w-[560px]" role="img" aria-label="Volume semanal">`;
+  svg+=`<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#3f3f46"/>`;
+  weeks.forEach((w,i)=>{const h=(w.volume/max)*(H-70),x=pad+i*bw+8,y=H-pad-h;svg+=`<rect x="${x}" y="${y}" width="${bw-16}" height="${h}" rx="5" fill="#22c55e" opacity="${w.volume?0.85:0.15}"/><text x="${x+bw/2-8}" y="${H-18}" fill="#71717a" font-size="11">S${w.week}</text>`});
+  svg+=`<text x="8" y="18" fill="#a1a1aa" font-size="11">Volume de carga × repetições por semana</text></svg>`;
+  $("performanceChart").innerHTML=svg;
+}
+
+function clearCurrent(){
+  const w=currentWorkout();
+  w.exercises.forEach(e=>{for(let i=0;i<e[3];i++){delete state.weights[key(e[0],i)];delete state.reps[key(e[0],i)];delete state.checks[key(e[0],i)]}});
+  state.sessions=state.sessions.filter(s=>!(s.program===state.program&&s.week===state.week&&s.workout===state.workout));
+  save();render();
+}
+
+$("programSelect").addEventListener("change",e=>{state.program=e.target.value;state.workout="A";state.week=1;save();tabs();render();scrollTo({top:0,behavior:"smooth"})});
+$("weekSelect").addEventListener("change",e=>{state.week=Math.min(8,Math.max(1,+e.target.value));save();render()});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{state.workout=b.dataset.w;save();tabs();render();scrollTo({top:0,behavior:"smooth"})});
+function tabs(){document.querySelectorAll(".tab").forEach(b=>{b.className=b.dataset.w===state.workout?"tab rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-2 text-sm font-bold text-green-400":"tab rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-bold text-zinc-400"});$("programSelect").value=state.program;$("weekSelect").value=String(state.week);$("programFocus").textContent=PROGRAM_LIBRARY[state.program].focus}
+$("finishSession").addEventListener("click",saveSession);
+
+$("resetBtn").addEventListener("click",()=>{$("modal").classList.remove("hidden");$("modal").classList.add("flex")});
+$("cancel").addEventListener("click",()=>{$("modal").classList.add("hidden");$("modal").classList.remove("flex")});
+$("confirm").addEventListener("click",()=>{clearCurrent();$("modal").classList.add("hidden");$("modal").classList.remove("flex")});
+
+let timerInterval=null;
+function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(Math.max(0,s%60)).padStart(2,"0")}
+function timerUI(){$("timerDisplay").textContent=fmt(state.remaining);$("timerToggle").textContent=state.remaining<=0?"↻":state.running?"Ⅱ":"▶";$("timerStatus").textContent=state.remaining<=0?"DESCANSO FINALIZADO":state.running?"Cronômetro rodando":"Descanso"}
+function startTimer(){if(state.remaining<=0)state.remaining=state.timer;if(state.running)return;state.running=true;timerInterval=setInterval(()=>{state.remaining--;timerUI();if(state.remaining<=0){clearInterval(timerInterval);timerInterval=null;state.running=false;beep();navigator.vibrate?.([300,150,300])}},1000);timerUI()}
+function pauseTimer(){state.running=false;clearInterval(timerInterval);timerInterval=null;timerUI()}
+function setTimer(s){clearInterval(timerInterval);timerInterval=null;state.timer=Number(s);state.remaining=state.timer;state.running=false;timerUI()}
+function beep(){try{const C=window.AudioContext||window.webkitAudioContext,c=new C,o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.5);o.start();o.stop(c.currentTime+.5)}catch(e){}}
+$("timerToggle").onclick=()=>state.running?pauseTimer():startTimer();
+$("timerReset").onclick=()=>setTimer(state.timer);
+document.querySelectorAll(".timer").forEach(b=>b.onclick=()=>setTimer(+b.dataset.t));
+
+function pdfBase(doc,title,sub){doc.setFillColor(9,9,11);doc.rect(0,0,210,25,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(17);doc.text(title,14,12);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(180,180,180);doc.text(sub,14,19)}
+function pdfFooter(doc,page){doc.setFontSize(7);doc.setTextColor(130,130,130);doc.text("IronTrack • Relatório",14,290);doc.text(`Página ${page}`,190,290,{align:"right"})}
+
+
+$("csv").addEventListener("click",()=>{
+  const sessions=state.sessions.filter(s=>s.program===state.program);
+  const out=[["data","programa","semana","treino","exercicio","serie","repeticoes","carga_kg","concluida"]];
+  sessions.forEach(s=>s.exercises.forEach(e=>e.sets.forEach(x=>out.push([
+    new Date(s.date).toLocaleString("pt-BR"),state.program,s.week,s.workout,e.name,x.set,x.reps,x.weight,x.done?"Sim":"Não"
+  ]))));
+  if(out.length===1){
+    alert("Finalize pelo menos uma sessão para exportar o histórico.");
+    return;
+  }
+  const csv="\uFEFF"+out.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=`irontrack_historico_${state.program}.csv`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+
+$("pdfPlan").addEventListener("click",()=>{
+  if(!window.jspdf){alert("A biblioteca de PDF não carregou.");return}
+  const {jsPDF}=window.jspdf,d=new jsPDF({unit:"mm",format:"a4"});let page=1;
+  pdfBase(d,"IRONTRACK — PLANO","Full Body • Programa ativo • 8 semanas");
+  let y=34;d.setTextColor(35,35,35);d.setFont("helvetica","bold");d.setFontSize(11);d.text(PROGRAM_LIBRARY[state.program].label,14,y);y+=7;d.setFont("helvetica","normal");d.setFontSize(8);
+  d.text(d.splitTextToSize(PROGRAM_LIBRARY[state.program].focus,180),14,y);y+=12;
+  Object.entries(activeWorkouts()).forEach(([code,w])=>{
+    if(y>265){pdfFooter(d,page);d.addPage();page++;pdfBase(d,"IRONTRACK — PLANO","Continuação");y=32}
+    d.setFont("helvetica","bold");d.setFontSize(11);d.setTextColor(35,35,35);d.text(`${code} • ${w.day}`,14,y);y+=6;
+    d.setFont("helvetica","normal");d.setFontSize(7);
+    w.exercises.forEach(e=>{
+      const line=d.splitTextToSize(`${e[1]} — ${e[3]} séries • ${e[4]} • descanso ${e[5]}s\nExecução: ${e[2]}\nDica: ${e[6]}`,180);
+      if(y+line.length*4.2>282){pdfFooter(d,page);d.addPage();page++;pdfBase(d,"IRONTRACK — PLANO","Continuação");y=32}
+      d.text(line,14,y);y+=line.length*4.2+3;
+    });
+  });
+  pdfFooter(d,page);d.save("irontrack_plano_8_semanas.pdf");
+});
+
+$("pdfProgress").addEventListener("click",()=>{
+  if(!window.jspdf){alert("A biblioteca de PDF não carregou.");return}
+  const {jsPDF}=window.jspdf,d=new jsPDF({unit:"mm",format:"a4"}),a=programStats();let page=1;
+  pdfBase(d,"IRONTRACK — EVOLUÇÃO",`${PROGRAM_LIBRARY[state.program].label} • 8 semanas`);
+  let y=34;d.setTextColor(35,35,35);d.setFont("helvetica","bold");d.setFontSize(11);d.text("Resumo",14,y);y+=7;d.setFont("helvetica","normal");d.setFontSize(8.5);
+  [`Sessões registradas: ${a.sessions.length}`,`Séries concluídas: ${a.done.length}`,`Volume acumulado: ${a.volume.toFixed(0)} kg`,`Exercícios com PR: ${Object.keys(a.prs).length}`].forEach(t=>{d.text(t,14,y);y+=6});
+  y+=4;d.setFont("helvetica","bold");d.setFontSize(11);d.text("PRs / melhores registros",14,y);y+=7;d.setFont("helvetica","normal");d.setFontSize(8);
+  Object.entries(a.prs).slice(0,12).forEach(([n,v])=>{if(y>282){pdfFooter(d,page);d.addPage();page++;pdfBase(d,"IRONTRACK — EVOLUÇÃO","Continuação");y=32}d.text(d.splitTextToSize(`${n}: maior carga ${v.maxLoad} kg • melhor série ${v.bestSet.toFixed(0)} kg·reps`,180),14,y);y+=5});
+  y+=5;d.setFont("helvetica","bold");d.text("Possíveis estagnações",14,y);y+=7;d.setFont("helvetica","normal");
+  (a.plateau.length?a.plateau:[{name:"Nenhuma detectada",first:0,last:0}]).slice(0,10).forEach(x=>{d.text(d.splitTextToSize(`${x.name}${x.first?" — desempenho recente sem avanço relevante ("+x.first.toFixed(0)+" → "+x.last.toFixed(0)+")":""}`,180),14,y);y+=5});
+  pdfFooter(d,page);d.save("irontrack_evolucao.pdf");
+});
+
+tabs();render();setTimer(state.timer||90);
+if(window.matchMedia && !window.matchMedia("(display-mode: standalone)").matches && !navigator.standalone){
+  const hint=document.getElementById("installHint");
+  if(hint)hint.classList.remove("hidden");
+}
+if("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")){
+  navigator.serviceWorker.register("./sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
